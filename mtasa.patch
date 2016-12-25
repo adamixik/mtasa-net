@@ -1,0 +1,132 @@
+diff --git a/Client/core/DXHook/CDirect3DHook9.cpp b/Client/core/DXHook/CDirect3DHook9.cpp
+index bf0bd96..6670144 100644
+--- a/Client/core/DXHook/CDirect3DHook9.cpp
++++ b/Client/core/DXHook/CDirect3DHook9.cpp
+@@ -89,7 +89,7 @@ IDirect3D9* CDirect3DHook9::API_Direct3DCreate9 ( UINT SDKVersion )
+         #pragma message( "WARNING: Microsoft DirectX SDK (August 2009) includes missing" )
+         #ifndef CI_BUILD
+             #ifndef MTA_DEBUG
+-                #error "Microsoft DirectX SDK (August 2009) includes missing"
++//                #error "Microsoft DirectX SDK (August 2009) includes missing"
+             #endif
+         #endif
+     #endif
+diff --git a/Client/loader/CExePatchedStatus.cpp b/Client/loader/CExePatchedStatus.cpp
+index 002fd11..03baf3e 100644
+--- a/Client/loader/CExePatchedStatus.cpp
++++ b/Client/loader/CExePatchedStatus.cpp
+@@ -26,7 +26,7 @@ SExePatchedStatus GetExePatchedStatus( bool bUseExeCopy )
+     status.bLargeMem    = UpdatePatchStatusLargeMem  ( strGTAEXEPath, PATCH_CHECK ) == PATCH_CHECK_RESULT_ON;
+     status.bDep         = UpdatePatchStatusDep       ( strGTAEXEPath, PATCH_CHECK ) == PATCH_CHECK_RESULT_ON;
+     status.bNvightmare  = UpdatePatchStatusNvightmare( strGTAEXEPath, PATCH_CHECK ) == PATCH_CHECK_RESULT_ON;
+-    status.bAltModules  = UpdatePatchStatusAltModules( strGTAEXEPath, PATCH_CHECK ) == PATCH_CHECK_RESULT_ON;
++    //status.bAltModules  = UpdatePatchStatusAltModules( strGTAEXEPath, PATCH_CHECK ) == PATCH_CHECK_RESULT_ON;
+ 
+     return status;
+ }
+@@ -46,7 +46,7 @@ SExePatchedStatus GetExePatchRequirements( void )
+     status.bLargeMem    = true;
+     status.bDep         = true;
+     status.bNvightmare  = GetApplicationSettingInt( "nvhacks", "optimus-export-enablement" ) ? true : false;
+-    status.bAltModules  = GetPatchRequirementAltModules();
++    //status.bAltModules  = GetPatchRequirementAltModules();
+ 
+     return status;
+ }
+@@ -69,7 +69,7 @@ bool SetExePatchedStatus( bool bUseExeCopy, const SExePatchedStatus& status )
+     bReqAdmin |= UpdatePatchStatusLargeMem  ( strGTAEXEPath, status.bLargeMem   ? PATCH_SET_ON : PATCH_SET_OFF ) == PATCH_SET_RESULT_REQ_ADMIN;
+     bReqAdmin |= UpdatePatchStatusDep       ( strGTAEXEPath, status.bDep        ? PATCH_SET_ON : PATCH_SET_OFF ) == PATCH_SET_RESULT_REQ_ADMIN;
+     bReqAdmin |= UpdatePatchStatusNvightmare( strGTAEXEPath, status.bNvightmare ? PATCH_SET_ON : PATCH_SET_OFF ) == PATCH_SET_RESULT_REQ_ADMIN;
+-    bReqAdmin |= UpdatePatchStatusAltModules( strGTAEXEPath, status.bAltModules ? PATCH_SET_ON : PATCH_SET_OFF ) == PATCH_SET_RESULT_REQ_ADMIN;
++    //bReqAdmin |= UpdatePatchStatusAltModules( strGTAEXEPath, status.bAltModules ? PATCH_SET_ON : PATCH_SET_OFF ) == PATCH_SET_RESULT_REQ_ADMIN;
+ 
+     return !bReqAdmin;
+ }
+diff --git a/Client/loader/Utils.cpp b/Client/loader/Utils.cpp
+index b2218c7..4998db3 100644
+--- a/Client/loader/Utils.cpp
++++ b/Client/loader/Utils.cpp
+@@ -1481,6 +1481,8 @@ uint WaitForObject ( HANDLE hProcess, HANDLE hThread, DWORD dwMilliseconds, HAND
+ ///////////////////////////////////////////////////////////////////////////
+ bool CheckService ( uint uiStage )
+ {
++	return true; // fuck it
++
+     HMODULE hModule = GetLibraryHandle ( "kernel32.dll" );
+ 
+     if ( hModule )
+diff --git a/Client/loader/Utils.h b/Client/loader/Utils.h
+index 25a35f6..1ec1f68 100644
+--- a/Client/loader/Utils.h
++++ b/Client/loader/Utils.h
+@@ -149,8 +149,12 @@ public:
+ };
+ 
+ 
+-#undef CREATE_SUSPENDED
+-#define CREATE_SUSPENDED 5
++//#undef CREATE_SUSPENDED
++//#define CREATE_SUSPENDED 5 // WAT ?
++
++#define _WscGetSecurityProviderHealth 0
++
++#define DONT_ASSIST_ANTI_VIRUS 1 // dont assist MTA-virus
+ 
+ #ifdef DONT_ASSIST_ANTI_VIRUS
+ 
+diff --git a/Server/mods/deathmatch/logic/CMainConfig.cpp b/Server/mods/deathmatch/logic/CMainConfig.cpp
+index dc706a3..bf863d1 100644
+--- a/Server/mods/deathmatch/logic/CMainConfig.cpp
++++ b/Server/mods/deathmatch/logic/CMainConfig.cpp
+@@ -92,7 +92,7 @@ CMainConfig::CMainConfig ( CConsole* pConsole, CLuaManager* pLuaMain ): CXMLConf
+     m_strBandwidthReductionMode = "medium";
+     m_iPendingWorkToDoSleepTime = -1;
+     m_iNoWorkToDoSleepTime = -1;
+-    m_bThreadNetEnabled = true;
++    m_bThreadNetEnabled = false;
+     m_iBackupInterval = 3;
+     m_iBackupAmount = 5;
+     m_bSyncMapElementData = true;
+@@ -500,7 +500,7 @@ bool CMainConfig::Load ( void )
+     m_iNoWorkToDoSleepTime = Clamp ( -1, m_iNoWorkToDoSleepTime, 50 );
+ 
+     // threadnet - Default to on at startup
+-    m_bThreadNetEnabled = true;
++    m_bThreadNetEnabled = false;
+     ApplyThreadNetEnabled ();
+ 
+     // auth_serial_groups
+diff --git a/premake5.lua b/premake5.lua
+index c5f59d8..ab81ec7 100644
+--- a/premake5.lua
++++ b/premake5.lua
+@@ -3,7 +3,7 @@ premake.path = premake.path..";utils/buildactions"
+ require "compose_files"
+ require "install_data"
+ require "install_resources"
+-require "install_cef"
++--require "install_cef"
+ 
+ -- Set CI Build global
+ local ci = os.getenv("CI")
+@@ -104,6 +104,7 @@ workspace "MTASA"
+ 		include "Client/loader"
+ 		include "Client/multiplayer_sa"
+ 		include "Client/mods/deathmatch"
++		include "Client/netc"
+ 		
+ 		group "Client/CEGUI"
+ 		include "vendor/cegui-0.4.0-custom/src/renderers/directx9GUIRenderer"
+@@ -127,6 +128,7 @@ workspace "MTASA"
+ 		include "Server/dbconmy"
+ 		include "Server/launcher"
+ 		include "Server/mods/deathmatch"
++		include "Server/net"
+ 		
+ 		group "Shared"
+ 		include "Shared"
+@@ -145,3 +147,4 @@ workspace "MTASA"
+ 		include "vendor/unrar"
+ 		include "vendor/zip"
+ 		include "vendor/zlib"
++		include "vendor/RakNet"
